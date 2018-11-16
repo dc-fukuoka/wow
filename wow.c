@@ -10,7 +10,6 @@
 #include <arpa/inet.h>
 #include <ctype.h>
 
-#define SIZE    128
 #define MAC_LEN 17 /* aa:bb:cc:dd:ee:ff */
 
 char ip_str[16];
