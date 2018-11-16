@@ -12,7 +12,7 @@
 
 #define MAC_LEN 17 /* aa:bb:cc:dd:ee:ff */
 
-char ip_str[16];
+char ip_str[15];
 unsigned char mac[6]; /* 6 bytes */
 unsigned char magic_packet[102]; /* first 6 bytes:FF, and MACx16, 6*17 = 102 */
 int port;
@@ -46,7 +46,6 @@ int check_mac(const char *_mac)
 		}
 	}
 	if (cnt != 5) goto err;
-
 
 	char *mac_str[6];
 	for (p=mac_dup; *p; p++) {
@@ -83,16 +82,14 @@ err:
 
 int set_magic_packet(void)
 {
-	int i, j;
+	int i;
 	
 	for (i=0; i<6; i++)
 		magic_packet[i] = (unsigned char)(-1);
-	for (i=6; i<102; i++) {
+	for (i=6; i<102; i++)
 		magic_packet[i] = mac[i%6];
-	}
 	return 0;
 }
-
 
 int resolv_name(const char *node, char *ip_str)
 {
@@ -105,6 +102,10 @@ int resolv_name(const char *node, char *ip_str)
 	myassert(err == 0, "getaddrinfo(), %s\n", gai_strerror(err));
 
 	addr.s_addr = ((struct sockaddr_in *)(res->ai_addr))->sin_addr.s_addr;
+#ifdef _DEBUG
+	printf("debug: addr.s_addr: %u\n", addr.s_addr);
+#endif
+	memset(ip_str, '\0', sizeof(ip_str));
 	myassert(inet_ntop(AF_INET, &addr, ip_str, 16), "inet_ntop()\n");
 	freeaddrinfo(res);
 	printf("%s -> %s\n", node, ip_str);
@@ -114,22 +115,34 @@ int resolv_name(const char *node, char *ip_str)
 int send_magic_packet(void)
 {
 	int sockfd;
-	struct sockaddr_in server_addr;
-	in_addr_t ip = inet_addr(ip_str);
+	struct in_addr ip;
+	struct sockaddr_in client_addr, server_addr;
+	int optval = 1;
+
+	myassert(inet_aton(ip_str, &ip), "inet_aton()\n");
 	
-	sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	myassert(sockfd >= 0, "socket()\n");
 
+	myassert(setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &optval, sizeof(optval)) >= 0, "setsockopt()\n");
+
+	memset(&client_addr, 0, sizeof(client_addr));
+	client_addr.sin_family      = AF_INET;
+	client_addr.sin_addr.s_addr = INADDR_ANY;
+	client_addr.sin_port        = 0;
+
+	myassert(bind(sockfd, &client_addr, sizeof(client_addr)) >= 0, "bind()\n");
+	
 	memset(&server_addr, 0, sizeof(server_addr));
 	server_addr.sin_family      = AF_INET;
-	server_addr.sin_addr.s_addr = ip;
+	server_addr.sin_addr.s_addr = ip.s_addr;
 	server_addr.sin_port        = htons(port);
+
+#ifdef _DEBUG
+	printf("debug: %s <-> %u\n", ip_str, ip);
+#endif
 			
-	myassert(connect(sockfd, (struct sockaddr*)&server_addr, sizeof(server_addr)) >= 0, "connect()\n");
-
-	printf("connected\n");
-
-	myassert(send(sockfd, magic_packet, sizeof(magic_packet), MSG_DONTWAIT) >= 0, "send()\n");
+	myassert(sendto(sockfd, magic_packet, sizeof(magic_packet), 0, (struct sockaddr*)&server_addr, sizeof(server_addr)) == sizeof(magic_packet), "sendto()\n");
 	printf("sent magic packet...\n");
 	myassert(close(sockfd) >= 0, "close()\n");
 	return 0;
