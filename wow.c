@@ -27,9 +27,9 @@ struct magic_packet_info {
                 }                                                       \
         } while(0)
 
-int check_mac(const char *_mac, struct magic_packet_info *minfo)
+int check_mac(const char *mac, struct magic_packet_info *minfo)
 {
-        char *mac_dup = strdup(_mac);
+        char *mac_dup = strdup(mac);
         /* check the length */
         if (strlen(mac_dup) != MAC_LEN)
                 goto err;
@@ -111,6 +111,7 @@ int resolv_name(const char *node, struct magic_packet_info *minfo)
         printf("%s -> %s\n", node, minfo->ip_str);
         return 0;
 }
+
 int send_magic_packet(struct magic_packet_info *minfo)
 {
         int sockfd;
@@ -159,11 +160,11 @@ int main(int argc, char **argv)
 	struct magic_packet_info minfo;
 
         char *node = argv[1];
-        char *_mac = argv[2];
+        char *mac = argv[2];
         minfo.port = (uint16_t)atoi(argv[3]);
 
         resolv_name(node, &minfo);
-        check_mac(_mac, &minfo);
+        check_mac(mac, &minfo);
         set_magic_packet(&minfo);
 
 #ifdef _DEBUG
