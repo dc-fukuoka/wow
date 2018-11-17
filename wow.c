@@ -150,7 +150,7 @@ int send_magic_packet(void)
 int main(int argc, char **argv)
 {
         if (!argv[1] || !argv[2] || !argv[3]) {
-                fprintf(stderr, "usage: %s <FQDN> <MAC address> <port no>\n", argv[0]);
+                fprintf(stderr, "usage: %s <FQDN> <MAC address> <UDP port no>\n", argv[0]);
                 exit(EXIT_FAILURE);
         }
 
