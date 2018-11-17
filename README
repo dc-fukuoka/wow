@@ -1,4 +1,9 @@
 wow - wake on wan.
       this is for my pc.
-      currently this does not work.
-      in progress...
+
+$ make
+$ ./wow <FQDN> <MAC> <UDP port>
+
+note: it does not seem to be possible to wake up from linux to windows...
+so I used cygwin.(send magic packet from windows(cygwin) to windows), it works fine.
+off course, some router settings and OS/BIOS settings are required to achieve it!
