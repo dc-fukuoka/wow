@@ -64,7 +64,7 @@ int check_mac(const char *_mac)
         }
 
         for (i=0; i<6; i++)
-                sscanf(mac_str[i], "%x", &mac[i]);
+                sscanf(mac_str[i], "%hhx", &mac[i]);
 #ifdef _DEBUG
         printf("debug: mac:\n");
         for (i=0; i<6; i++)
@@ -103,7 +103,7 @@ int resolv_name(const char *node, char *ip_str)
 
         addr.s_addr = ((struct sockaddr_in *)(res->ai_addr))->sin_addr.s_addr;
 
-        memset(ip_str, '\0', sizeof(ip_str));
+        memset(ip_str, '\0', sizeof(*ip_str));
         myassert(inet_ntop(AF_INET, &addr, ip_str, 16) != 0, "inet_ntop()\n");
         freeaddrinfo(res);
         printf("%s -> %s\n", node, ip_str);
