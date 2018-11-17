@@ -12,7 +12,7 @@
 
 #define MAC_LEN 17 /* aa:bb:cc:dd:ee:ff */
 
-char ip_str[15];
+char ip_str[15]; /* aaa.bbb.ccc.ddd */
 unsigned char mac[6]; /* 6 bytes */
 unsigned char magic_packet[102]; /* first 6 bytes:FF, and MACx16, 6*17 = 102 */
 int port;
@@ -102,9 +102,7 @@ int resolv_name(const char *node, char *ip_str)
 	myassert(err == 0, "getaddrinfo(), %s\n", gai_strerror(err));
 
 	addr.s_addr = ((struct sockaddr_in *)(res->ai_addr))->sin_addr.s_addr;
-#ifdef _DEBUG
-	printf("debug: addr.s_addr: %u\n", addr.s_addr);
-#endif
+
 	memset(ip_str, '\0', sizeof(ip_str));
 	myassert(inet_ntop(AF_INET, &addr, ip_str, 16), "inet_ntop()\n");
 	freeaddrinfo(res);
@@ -124,14 +122,14 @@ int send_magic_packet(void)
 	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	myassert(sockfd >= 0, "socket()\n");
 
-	myassert(setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &optval, sizeof(optval)) >= 0, "setsockopt()\n");
+//	myassert(setsockopt(sockfd, SOL_SOCKET, IP_FREEBIND, &optval, sizeof(optval)) >= 0, "setsockopt()\n");
 
 	memset(&client_addr, 0, sizeof(client_addr));
 	client_addr.sin_family      = AF_INET;
 	client_addr.sin_addr.s_addr = INADDR_ANY;
-	client_addr.sin_port        = 0;
+	client_addr.sin_port        = htons(0);
 
-	myassert(bind(sockfd, &client_addr, sizeof(client_addr)) >= 0, "bind()\n");
+	myassert(bind(sockfd, (struct sockaddr*)&client_addr, sizeof(client_addr)) >= 0, "bind()\n");
 	
 	memset(&server_addr, 0, sizeof(server_addr));
 	server_addr.sin_family      = AF_INET;
@@ -141,7 +139,7 @@ int send_magic_packet(void)
 #ifdef _DEBUG
 	printf("debug: %s <-> %u\n", ip_str, ip);
 #endif
-			
+	
 	myassert(sendto(sockfd, magic_packet, sizeof(magic_packet), 0, (struct sockaddr*)&server_addr, sizeof(server_addr)) == sizeof(magic_packet), "sendto()\n");
 	printf("sent magic packet...\n");
 	myassert(close(sockfd) >= 0, "close()\n");
