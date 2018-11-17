@@ -12,10 +12,12 @@
 
 #define MAC_LEN 17 /* aa:bb:cc:dd:ee:ff */
 
-char ip_str[15]; /* aaa.bbb.ccc.ddd */
-unsigned char mac[6]; /* 6 bytes */
-unsigned char magic_packet[102]; /* first 6 bytes:FF, and MACx16, 6*17 = 102 */
-uint16_t port;
+struct magic_packet_info {
+	char ip_str[15]; /* aaa.bbb.ccc.ddd */
+	unsigned char mac[6]; /* 6 bytes */
+	unsigned char magic_packet[102]; /* first 6 bytes:FF, and MACx16, 6*17 = 102 */
+	uint16_t port;
+};
 
 #define myassert(expr, fmt, ...) \
         do {                                                            \
@@ -25,7 +27,7 @@ uint16_t port;
                 }                                                       \
         } while(0)
 
-int check_mac(const char *_mac)
+int check_mac(const char *_mac, struct magic_packet_info *minfo)
 {
         char *mac_dup = strdup(_mac);
         /* check the length */
@@ -64,11 +66,11 @@ int check_mac(const char *_mac)
         }
 
         for (i=0; i<6; i++)
-                sscanf(mac_str[i], "%hhx", &mac[i]);
+                sscanf(mac_str[i], "%hhx", &minfo->mac[i]);
 #ifdef _DEBUG
         printf("debug: mac:\n");
         for (i=0; i<6; i++)
-                printf("%02x ", mac[i]);
+                printf("%02x ", minfo->mac[i]);
         printf("\n");
 #endif
 
@@ -80,18 +82,18 @@ err:
         exit(EXIT_FAILURE);
 }
 
-int set_magic_packet(void)
+int set_magic_packet(struct magic_packet_info *minfo)
 {
         int i;
 
         for (i=0; i<6; i++)
-                magic_packet[i] = (unsigned char)(-1);
+                minfo->magic_packet[i] = (unsigned char)(-1);
         for (i=6; i<102; i++)
-                magic_packet[i] = mac[i%6];
+                minfo->magic_packet[i] = minfo->mac[i%6];
         return 0;
 }
 
-int resolv_name(const char *node)
+int resolv_name(const char *node, struct magic_packet_info *minfo)
 {
 
         struct in_addr addr;
@@ -103,20 +105,20 @@ int resolv_name(const char *node)
 
         addr.s_addr = ((struct sockaddr_in *)(res->ai_addr))->sin_addr.s_addr;
 
-        memset(ip_str, '\0', sizeof(ip_str));
-        myassert(inet_ntop(AF_INET, &addr, ip_str, 16) != 0, "inet_ntop()\n");
+        memset(minfo->ip_str, '\0', sizeof(minfo->ip_str));
+        myassert(inet_ntop(AF_INET, &addr, minfo->ip_str, 16) != 0, "inet_ntop()\n");
         freeaddrinfo(res);
-        printf("%s -> %s\n", node, ip_str);
+        printf("%s -> %s\n", node, minfo->ip_str);
         return 0;
 }
-int send_magic_packet(void)
+int send_magic_packet(struct magic_packet_info *minfo)
 {
         int sockfd;
         struct in_addr ip;
         struct sockaddr_in client_addr, server_addr;
         int optval = 1;
 
-        myassert(inet_aton(ip_str, &ip) != 0, "inet_aton()\n");
+        myassert(inet_aton(minfo->ip_str, &ip) != 0, "inet_aton()\n");
 
         sockfd = socket(AF_INET, SOCK_DGRAM, 0);
         myassert(sockfd >= 0, "socket()\n");
@@ -134,14 +136,14 @@ int send_magic_packet(void)
         memset(&server_addr, 0, sizeof(server_addr));
         server_addr.sin_family      = AF_INET;
         server_addr.sin_addr.s_addr = ip.s_addr;
-        server_addr.sin_port        = htons(port);
+        server_addr.sin_port        = htons(minfo->port);
 
 #ifdef _DEBUG
-        printf("debug: port: %u <-> %d\n", server_addr.sin_port, port);
-        printf("debug: %s <-> %u\n", ip_str, ip.s_addr);
+        printf("debug: port: %u <-> %d\n", server_addr.sin_port, minfo->port);
+        printf("debug: %s <-> %u\n", minfo->ip_str, ip.s_addr);
 #endif
 
-        myassert(sendto(sockfd, magic_packet, sizeof(magic_packet), 0, (struct sockaddr*)&server_addr, sizeof(server_addr)) == sizeof(magic_packet), "sendto()\n");
+        myassert(sendto(sockfd, minfo->magic_packet, sizeof(minfo->magic_packet), 0, (struct sockaddr*)&server_addr, sizeof(server_addr)) == sizeof(minfo->magic_packet), "sendto()\n");
         printf("sent magic packet...\n");
         myassert(close(sockfd) >= 0, "close()\n");
         return 0;
@@ -154,24 +156,26 @@ int main(int argc, char **argv)
                 exit(EXIT_FAILURE);
         }
 
+	struct magic_packet_info minfo;
+
         char *node = argv[1];
         char *_mac = argv[2];
-        port = (uint16_t)atoi(argv[3]);
+        minfo.port = (uint16_t)atoi(argv[3]);
 
-        resolv_name(node);
-        check_mac(_mac);
-        set_magic_packet();
+        resolv_name(node, &minfo);
+        check_mac(_mac, &minfo);
+        set_magic_packet(&minfo);
 
 #ifdef _DEBUG
-        printf("debug: %s: %s\n", node, ip_str);
+        printf("debug: %s: %s\n", node, minfo.ip_str);
         int i;
         printf("debug: packet:\n");
         for (i=0; i<102; i++)
-                printf("%02x", magic_packet[i]);
+                printf("%02x", minfo.magic_packet[i]);
         printf("\n");
 #endif
 
-        send_magic_packet();
+        send_magic_packet(&minfo);
 
         return 0;
 }
