@@ -91,7 +91,7 @@ int set_magic_packet(void)
         return 0;
 }
 
-int resolv_name(const char *node, char *ip_str)
+int resolv_name(const char *node)
 {
 
         struct in_addr addr;
@@ -103,7 +103,7 @@ int resolv_name(const char *node, char *ip_str)
 
         addr.s_addr = ((struct sockaddr_in *)(res->ai_addr))->sin_addr.s_addr;
 
-        memset(ip_str, '\0', sizeof(*ip_str));
+        memset(ip_str, '\0', sizeof(ip_str));
         myassert(inet_ntop(AF_INET, &addr, ip_str, 16) != 0, "inet_ntop()\n");
         freeaddrinfo(res);
         printf("%s -> %s\n", node, ip_str);
@@ -158,7 +158,7 @@ int main(int argc, char **argv)
         char *_mac = argv[2];
         port = (uint16_t)atoi(argv[3]);
 
-        resolv_name(node, ip_str);
+        resolv_name(node);
         check_mac(_mac);
         set_magic_packet();
 
