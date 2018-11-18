@@ -29,7 +29,7 @@ struct magic_packet_info {
                 }                                                       \
         } while(0)
 
-int check_mac(const char *mac, struct magic_packet_info *minfo)
+int check_mac(struct magic_packet_info *minfo, const char *mac)
 {
         char *mac_dup = strdup(mac);
         /* check the length */
@@ -95,7 +95,7 @@ int set_magic_packet(struct magic_packet_info *minfo)
         return 0;
 }
 
-int resolv_name(const char *node, struct magic_packet_info *minfo)
+int resolv_name(struct magic_packet_info *minfo, const char *node)
 {
 
         struct in_addr addr;
@@ -169,8 +169,8 @@ int main(int argc, char **argv)
         minfo.port = (uint16_t)atoi(argv[3]);
 	minfo.broadcast = argv[4] ? (bool)atoi(argv[4]) : true;
 
-        resolv_name(node, &minfo);
-        check_mac(mac, &minfo);
+        resolv_name(&minfo, node);
+        check_mac(&minfo, mac);
         set_magic_packet(&minfo);
 
 #ifdef _DEBUG
