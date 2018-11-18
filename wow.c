@@ -167,7 +167,7 @@ int main(int argc, char **argv)
         char *node = argv[1];
         char *mac  = argv[2];
         minfo.port = (uint16_t)atoi(argv[3]);
-	minfo.broadcast = argv[4] ? (bool)atoi(argv[4]) : 1;
+	minfo.broadcast = argv[4] ? (bool)atoi(argv[4]) : true;
 
         resolv_name(node, &minfo);
         check_mac(mac, &minfo);
