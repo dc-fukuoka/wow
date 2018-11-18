@@ -152,7 +152,7 @@ int send_magic_packet(struct magic_packet_info *minfo)
 
 int main(int argc, char **argv)
 {
-        if (!argv[1] || !argv[2] || !argv[3]) {
+        if (argc != 4) {
                 fprintf(stderr, "usage: %s <FQDN> <MAC address> <UDP port no>\n", argv[0]);
                 exit(EXIT_FAILURE);
         }
