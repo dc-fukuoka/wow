@@ -158,7 +158,7 @@ int send_magic_packet(struct magic_packet_info *minfo)
 int main(int argc, char **argv)
 {
         if (argc != 4 && argc != 5) {
-                fprintf(stderr, "usage: %s <FQDN> <MAC address> <UDP port no> [<0 or 1>]\n0: disable broadcast\n1: enable broadcast\ndefault: 0\n", argv[0]);
+                fprintf(stderr, "usage: %s <FQDN> <MAC address> <UDP port no> [<0 or 1>]\n0: disable broadcast\n1: enable broadcast\ndefault: 1\n", argv[0]);
                 exit(EXIT_FAILURE);
         }
 
@@ -167,7 +167,7 @@ int main(int argc, char **argv)
         char *node = argv[1];
         char *mac  = argv[2];
         minfo.port = (uint16_t)atoi(argv[3]);
-	minfo.broadcast = argv[4] ? (bool)atoi(argv[4]) : 0;
+	minfo.broadcast = argv[4] ? (bool)atoi(argv[4]) : 1;
 
         resolv_name(node, &minfo);
         check_mac(mac, &minfo);
