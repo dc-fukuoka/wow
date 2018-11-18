@@ -11,4 +11,4 @@ usage: ./wow <FQDN> <MAC address> <UDP port no> [<0 or 1>]
 default: 1
 ~~~
 _____
-note: off course, some router/OS/BIOS settings are required to achieve it!
+note: of course, some router/OS/BIOS settings are required to achieve it!
