@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdbool.h>
 
 #define MAC_LEN 17 /* aa:bb:cc:dd:ee:ff */
 
@@ -17,6 +18,7 @@ struct magic_packet_info {
 	unsigned char mac[6]; /* 6 bytes */
 	unsigned char magic_packet[102]; /* first 6 bytes:FF, and MACx16, 6*17 = 102 */
 	uint16_t port;
+	bool broadcast;
 };
 
 #define myassert(expr, fmt, ...) \
@@ -117,7 +119,6 @@ int send_magic_packet(struct magic_packet_info *minfo)
         int sockfd;
         struct in_addr ip;
         struct sockaddr_in client_addr, server_addr;
-        int optval = 1;
 
         myassert(inet_aton(minfo->ip_str, &ip) != 0, "inet_aton()\n");
 
@@ -125,7 +126,11 @@ int send_magic_packet(struct magic_packet_info *minfo)
         myassert(sockfd >= 0, "socket()\n");
         printf("using UDP protocol...\n");
 
-//      myassert(setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &optval, sizeof(optval)) >= 0, "setsockopt()\n");
+	if (minfo->broadcast) {
+		int optval = 1;
+		myassert(setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &optval, sizeof(optval)) >= 0, "setsockopt()\n");
+		printf("enable broadcast...\n");
+	}
 
         memset(&client_addr, 0, sizeof(client_addr));
         client_addr.sin_family      = AF_INET;
@@ -152,16 +157,17 @@ int send_magic_packet(struct magic_packet_info *minfo)
 
 int main(int argc, char **argv)
 {
-        if (argc != 4) {
-                fprintf(stderr, "usage: %s <FQDN> <MAC address> <UDP port no>\n", argv[0]);
+        if (argc != 4 && argc != 5) {
+                fprintf(stderr, "usage: %s <FQDN> <MAC address> <UDP port no> [<0 or 1>]\n0: disable broadcast\n1: enable broadcast\ndefault: 0\n", argv[0]);
                 exit(EXIT_FAILURE);
         }
 
 	struct magic_packet_info minfo;
 
         char *node = argv[1];
-        char *mac = argv[2];
+        char *mac  = argv[2];
         minfo.port = (uint16_t)atoi(argv[3]);
+	minfo.broadcast = argv[4] ? (bool)atoi(argv[4]) : 0;
 
         resolv_name(node, &minfo);
         check_mac(mac, &minfo);
