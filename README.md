@@ -4,7 +4,7 @@ how to run
 _____
 ~~~
 $ make
-$ ./wow <FQDN> <MAC> <UDP port no>
+$ ./wow <FQDN> <MAC address> <UDP port no>
 ~~~
 _____
 note: it does not seem to be possible to wake up from linux to windows...  
