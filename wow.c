@@ -99,7 +99,7 @@ int resolv_name(struct magic_packet_info *minfo, const char *node)
 {
 
         struct in_addr addr;
-        struct addrinfo hints, *res = NULL;
+        struct addrinfo *res = NULL;
         int err;
 
         err = getaddrinfo(node, NULL, NULL, &res);
